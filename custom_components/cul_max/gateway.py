@@ -25,7 +25,8 @@ CUL_COMMAND_TIMEOUT = 5
 CUL_RECONNECT_INITIAL_DELAY = 5
 CUL_RECONNECT_MAX_DELAY = 60
 CUL_MIN_FIRMWARE = 152
-CUL_MAX_MODE_COMMAND = "X21"  # culfw: 21 = MORITZ/MAX! RF mode
+CUL_RSSI_COMMAND = "X21"  # Enable RSSI reporting; this does not select a radio mode.
+CUL_MAX_MODE_COMMAND = "Zr"  # culfw: enable MORITZ/MAX! receive mode.
 
 
 @dataclass
@@ -130,9 +131,12 @@ class CulMaxGateway:
             await asyncio.wait_for(protocol.connected.wait(), timeout=CUL_COMMAND_TIMEOUT)
             version = await self._async_command("V", "V")
             self._validate_firmware(version)
-            await self._async_command(CUL_MAX_MODE_COMMAND, "X")
-            mode = await self._async_command("X", "X")
-            self._validate_max_mode(mode)
+            # FHEM's CUL driver uses X21 followed by Zr for rfmode MAX:
+            # X21 enables RSSI reporting; Zr activates the MORITZ/MAX! receiver.
+            self._write_raw(CUL_RSSI_COMMAND)
+            self._write_raw(CUL_MAX_MODE_COMMAND)
+            # Zr does not emit a dedicated acknowledgement. A working MAX! receiver
+            # is verified by its ability to send/receive Z frames after setup.
             # Firmware >= 1.52 accepts the MAX source ID; Zw configures fake wall thermostat ID.
             self._write_raw(f"Za{self.address}")
             self._write_raw(f"Zw{self.fake_wt_address}")
@@ -195,13 +199,6 @@ class CulMaxGateway:
         firmware = int(match.group(1)) * 100 + int(match.group(2))
         if firmware < CUL_MIN_FIRMWARE:
             raise ConnectionError(f"CUL firmware {match.group(1)}.{match.group(2)} is too old; version 1.52 or newer is required")
-
-    def _validate_max_mode(self, response: str) -> None:
-        """Verify CUL rfmode 21 (MORITZ/MAX!)."""
-        self.cul_mode = response
-        normalized = response.lower()
-        if "21" not in normalized and "moritz" not in normalized and "max" not in normalized:
-            raise ConnectionError(f"CUL did not enter MAX!/MORITZ rfmode: {response!r}")
 
     def on_connected(self, protocol: CulProtocol) -> None:
         self._protocol = protocol

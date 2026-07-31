@@ -5,8 +5,9 @@ Diese Integration portiert den **Gateway-Teil** von FHEMs `14_CUL_MAX.pm` nach H
 ## Enthaltene Funktionen
 
 - Konfigurationsdialog für seriellen Port, Baudrate und MAX!-Adressen
-- Automatische CUL-Initialisierung: Firmware-Abfrage, Umschalten auf `rfmode` 21
-  (MORITZ/MAX!), Modusprüfung sowie Setzen der Gateway- und Fake-Wandthermostat-Adresse
+- Automatische CUL-Initialisierung: Firmware-Abfrage, Aktivierung des
+  MORITZ/MAX!-Empfangs (`Zr`), RSSI-Konfiguration (`X21`) sowie Setzen der Gateway-
+  und Fake-Wandthermostat-Adresse
 - Automatische Wiederverbindung nach Aus-/Einstecken des konfigurierten CUL-Sticks
   (5–60 Sekunden, steigende Wartezeit)
 - Anlernmodus mit Verarbeitung von `PairPing` und Versand von `PairPong`
@@ -32,7 +33,7 @@ Die Funktionen, die FHEM-spezifische Konfigurationsdateien, Readings, Attribute,
 3. Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** nach **CUL MAX!** suchen.
 4. Den Port des CUL eintragen, z. B. `/dev/ttyACM0`, sowie dessen MAX!-Adresse (`maxid`).
 5. Der Stick muss für Home Assistant les- und schreibbar sein. Die Integration prüft beim Start die Firmware,
-   schaltet automatisch in den MAX!/MORITZ-Modus und verifiziert diesen anschließend.
+   aktiviert automatisch den MAX!/MORITZ-Empfang sowie die RSSI-Ausgabe.
 
 > Bei Home Assistant OS ist der Host-Port üblicherweise als `/dev/serial/by-id/...` stabiler als `/dev/ttyACM0`.
 > Verwende diese stabile Geräteadresse auch für die automatische Wiederverbindung nach einem Aus-/Einstecken.

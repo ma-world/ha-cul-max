@@ -64,10 +64,11 @@ class TestProtocol(unittest.TestCase):
 
     def test_cul_initialisation_commands_are_present(self):
         source = GATEWAY.read_text()
-        self.assertIn('CUL_MAX_MODE_COMMAND = "X21"', source)
+        self.assertIn('CUL_RSSI_COMMAND = "X21"', source)
+        self.assertIn('CUL_MAX_MODE_COMMAND = "Zr"', source)
         self.assertIn('await self._async_command("V", "V")', source)
-        self.assertIn('await self._async_command(CUL_MAX_MODE_COMMAND, "X")', source)
-        self.assertIn('await self._async_command("X", "X")', source)
+        self.assertIn('self._write_raw(CUL_RSSI_COMMAND)', source)
+        self.assertIn('self._write_raw(CUL_MAX_MODE_COMMAND)', source)
         self.assertIn('self._async_reconnect_loop()', source)
 
 
