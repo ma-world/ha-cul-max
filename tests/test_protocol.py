@@ -64,6 +64,11 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("ConfigFlowResult", source)
         self.assertNotIn("from homeassistant.data_entry_flow import FlowResult", source)
 
+    def test_serial_input_is_scheduled_on_home_assistant_event_loop(self):
+        source = GATEWAY.read_text()
+        self.assertIn("self.gateway.hass.loop.call_soon_threadsafe", source)
+        self.assertIn("self.gateway.async_handle_line, line.strip()", source)
+
     def test_dynamic_entities_schedule_addition_on_event_loop(self):
         root = Path(__file__).parents[1] / "custom_components" / "cul_max"
         for platform in ("binary_sensor.py", "climate.py", "sensor.py"):

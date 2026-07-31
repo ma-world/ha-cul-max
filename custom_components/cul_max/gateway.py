@@ -73,7 +73,11 @@ class CulProtocol(asyncio.Protocol):
         while "\n" in self.buffer or "\r" in self.buffer:
             line, _, self.buffer = self.buffer.replace("\r", "\n").partition("\n")
             if line:
-                self.gateway.async_handle_line(line.strip())
+                # pyserial-asyncio-fast may invoke data_received from its serial
+                # reader thread. Schedule all Home Assistant state work on the loop.
+                self.gateway.hass.loop.call_soon_threadsafe(
+                    self.gateway.async_handle_line, line.strip()
+                )
 
     def connection_lost(self, exc: Exception | None) -> None:
         self.gateway.on_disconnected(exc)
