@@ -20,7 +20,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         device = gateway.devices[address]
         if address not in known and device.device_type in {"ShutterContact", "virtualShutterContact"}:
             known.add(address)
-            async_add_entities([CulMaxWindowContact(gateway, device)])
+            hass.add_job(async_add_entities, [CulMaxWindowContact(gateway, device)])
 
     for address in gateway.devices:
         add(address)

@@ -24,7 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         device = gateway.devices[address]
         if address not in added and device.device_type in THERMOSTAT_TYPES:
             added.add(address)
-            async_add_entities([CulMaxClimate(gateway, device)])
+            hass.add_job(async_add_entities, [CulMaxClimate(gateway, device)])
 
     for address in gateway.devices:
         add(address)

@@ -64,6 +64,12 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("ConfigFlowResult", source)
         self.assertNotIn("from homeassistant.data_entry_flow import FlowResult", source)
 
+    def test_dynamic_entities_schedule_addition_on_event_loop(self):
+        root = Path(__file__).parents[1] / "custom_components" / "cul_max"
+        for platform in ("binary_sensor.py", "climate.py", "sensor.py"):
+            source = (root / platform).read_text()
+            self.assertIn("hass.add_job(async_add_entities", source)
+
     def test_existing_fhem_devices_are_typed_from_status_packets(self):
         source = GATEWAY.read_text()
         self.assertIn('"ThermostatState": "HeatingThermostat"', source)

@@ -25,7 +25,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
                 added.add((address, key))
                 entities.append(cls(gateway, device))
         if entities:
-            async_add_entities(entities)
+            hass.add_job(async_add_entities, entities)
 
     for address in gateway.devices:
         add(address)
