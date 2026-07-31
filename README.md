@@ -1,69 +1,56 @@
 # CUL MAX! – HACS Custom Integration
 
-Diese Integration portiert den **Gateway-Teil** von FHEMs `14_CUL_MAX.pm` nach Home Assistant. Sie kommuniziert direkt mit einem CUL-/CUL-kompatiblen USB-Funkstick, der im MAX!-Modus arbeitet, und verarbeitet MAX!-Telegramme (`Z…`) lokal über die serielle Schnittstelle.
+This integration ports the **gateway component** of FHEM's `14_CUL_MAX.pm` to Home Assistant. It communicates directly with a CUL or CUL-compatible USB radio stick operating in MAX! mode and processes MAX! telegrams (`Z…`) locally through the serial interface.
 
-## Enthaltene Funktionen
+## Included features
 
-- Konfigurationsdialog für seriellen Port, Baudrate und MAX!-Adressen
-- Automatische CUL-Initialisierung: Firmware-Abfrage, Aktivierung des
-  MORITZ/MAX!-Empfangs (`Zr`), RSSI-Konfiguration (`X21`) sowie Setzen der Gateway-
-  und Fake-Wandthermostat-Adresse
-- Automatische Wiederverbindung nach Aus-/Einstecken des konfigurierten CUL-Sticks
-  (5–60 Sekunden, steigende Wartezeit)
-- Anlernmodus mit Verarbeitung von `PairPing` und Versand von `PairPong`
-- Empfang von Fensterkontakt-, Wandthermostat- und Heizkörperthermostat-Telegrammen
-- Dynamisch angelegte Entitäten:
-  - Fensterkontakte als `binary_sensor`
-  - Heiz- und Wandthermostate als `climate`-Entität mit Solltemperatur und Ein/Aus
-  (4,5 °C entspricht „aus“ im MAX!-Protokoll)
-- gemessene Temperatur, Solltemperatur und Ventilstellung zusätzlich als `sensor`
-- ACK/NACK-Auswertung sowie Wiederholung ausgehender Telegramme (3 Versuche, je 3 Sekunden)
-- Dienste für Zeitsynchronisation, simulierten Fensterkontakt und simuliertes Wandthermostat
+- Configuration dialog for the serial port, baud rate, and MAX! addresses
+- Automatic CUL initialization: firmware query, enabling the MORITZ/MAX! receiver (`Zr`), RSSI configuration (`X21`), and setting the gateway and virtual wall-thermostat addresses
+- Automatic reconnection after unplugging and reconnecting the configured CUL stick (5–60 seconds with increasing retry intervals)
+- Pairing mode with `PairPing` processing and `PairPong` transmission
+- Reception of window-contact, wall-thermostat, and radiator-thermostat telegrams
+- Dynamically created entities:
+  - Window contacts as `binary_sensor`
+  - Radiator and wall thermostats as `climate` entities with target temperature and on/off support (`4.5 °C` represents “off” in the MAX! protocol)
+  - Measured temperature, target temperature, and valve position also as `sensor` entities
+- ACK/NACK evaluation and retransmission of outgoing telegrams (3 attempts, 3 seconds apart)
+- Services for time synchronization, a simulated window contact, and a simulated wall thermostat
 
-## Portierungsumfang
+## Porting scope
 
-Zusätzlich zum CUL-Gateway ist die wesentliche Zustands- und Steuerlogik aus FHEMs `10_MAX.pm` übernommen: Dekodierung der Thermostatstatus-Telegramme, MAX!-Steuertelegramme für Solltemperatur, Gruppen-IDs, Temperatur- und Ventilkonfiguration sowie Verknüpfungs- und Wochenprofil-Paketfunktionen auf Gateway-Ebene.
+In addition to the CUL gateway, the core state and control logic from FHEM's `10_MAX.pm` has been ported: decoding thermostat status telegrams, MAX! control telegrams for target temperatures, group IDs, temperature and valve configuration, plus gateway-level linking and weekly-profile packet support.
 
-Die Funktionen, die FHEM-spezifische Konfigurationsdateien, Readings, Attribute, Timer oder dessen Weboberfläche benötigen, wurden bewusst nicht übernommen. Die Week-Profile sind bereits im Gateway kodierbar, haben aber in dieser Version noch keinen vollwertigen Home-Assistant-Editor bzw. keinen persistenten Profil-Speicher.
+Features that depend on FHEM-specific configuration files, readings, attributes, timers, or its web interface have intentionally not been ported. Weekly profiles can already be encoded at the gateway level, but this version does not yet provide a full Home Assistant editor or persistent profile storage.
 
-## Bereits in FHEM angelernte Geräte übernehmen
+## Importing devices already paired in FHEM
 
-Ein erneutes Anlernen ist normalerweise **nicht erforderlich**. MAX!-Geräte sind an
-ihre Gateway-Adresse gebunden, nicht an FHEM selbst.
+In most cases, **re-pairing is not required**. MAX! devices are associated with their gateway address, not with FHEM itself.
 
-1. Trage in Home Assistant exakt dieselbe sechsstellige **`maxid`** ein, die beim
-   bisherigen CUL in FHEM hinterlegt war.
-2. Beende FHEM bzw. stelle sicher, dass FHEM den CUL nicht mehr geöffnet hat. Ein
-   serieller CUL-Stick kann immer nur von einem System gleichzeitig verwendet werden.
-3. Starte die CUL-MAX!-Integration. Bestehende Geräte werden automatisch aus ihren
-   normalen Status-Telegrammen erkannt; ein erneutes `PairPing` ist nicht nötig.
-4. Warte auf das nächste Funktelegramm oder löse eines manuell aus:
-   - Fensterkontakt einmal öffnen/schließen bzw. die Taste drücken,
-   - Heizkörperthermostat kurz am Gerät bedienen,
-   - Wandthermostat kurz bedienen.
+1. Enter exactly the same six-character **`maxid`** in Home Assistant that was configured for the CUL in FHEM.
+2. Stop FHEM, or otherwise ensure that FHEM no longer has the CUL open. A serial CUL stick can be used by only one system at a time.
+3. Start the CUL MAX! integration. Existing devices are automatically detected from their normal status telegrams; a new `PairPing` is not required.
+4. Wait for the next radio telegram, or trigger one manually:
+   - Open/close a window contact or press its button.
+   - Change a radiator thermostat directly on the device.
+   - Change a wall thermostat directly on the device.
 
-Nach dem ersten Telegramm erscheint das Gerät unter **Einstellungen → Geräte &
-Dienste → CUL MAX!**. Heiz- und Wandthermostate werden als `climate`, Fensterkontakte
-als `binary_sensor` angelegt.
+After the first telegram, the device appears under **Settings → Devices & services → CUL MAX!**. Radiator and wall thermostats are created as `climate` entities, while window contacts are created as `binary_sensor` entities.
 
-> Die bisher in FHEM gespeicherten Namen, Wochenprofile und sonstigen Readings werden
-> nicht automatisch migriert. Die Funk-Kopplung und die Geräteadresse bleiben jedoch
-> erhalten, solange dieselbe Gateway-ID verwendet wird.
+> Names, weekly profiles, and other readings previously stored in FHEM are not migrated automatically. The radio pairing and device address remain intact as long as the same gateway ID is used.
 
-## Installation über HACS
+## Installation through HACS
 
-1. Dieses Repository in HACS als **Custom repository** vom Typ **Integration** hinzufügen.
-2. **CUL MAX!** installieren und Home Assistant neu starten.
-3. Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** nach **CUL MAX!** suchen.
-4. Den Port des CUL eintragen, z. B. `/dev/ttyACM0`, sowie dessen MAX!-Adresse (`maxid`).
-5. Der Stick muss für Home Assistant les- und schreibbar sein. Die Integration prüft beim Start die Firmware,
-   aktiviert automatisch den MAX!/MORITZ-Empfang sowie die RSSI-Ausgabe.
+1. Add this repository to HACS as a **Custom repository** of type **Integration**.
+2. Install **CUL MAX!** and restart Home Assistant.
+3. Go to **Settings → Devices & services → Add integration** and search for **CUL MAX!**.
+4. Enter the CUL port, for example `/dev/ttyACM0`, and its MAX! address (`maxid`).
+5. The stick must be readable and writable by Home Assistant. During startup, the integration checks the firmware and automatically enables the MAX!/MORITZ receiver and RSSI output.
 
-> Bei Home Assistant OS ist der Host-Port üblicherweise als `/dev/serial/by-id/...` stabiler als `/dev/ttyACM0`.
-> Verwende diese stabile Geräteadresse auch für die automatische Wiederverbindung nach einem Aus-/Einstecken.
-> Für die Initialisierung wird mindestens CUL-Firmware 1.52 benötigt; a-culfw wird ebenfalls akzeptiert.
+> On Home Assistant OS, `/dev/serial/by-id/...` is usually more stable than `/dev/ttyACM0`.
+> Use this stable device path for reliable reconnection after unplugging and reconnecting the CUL stick.
+> Initialization requires CUL firmware 1.52 or later; a-culfw is also supported.
 
-## Dienste
+## Services
 
 ```yaml
 service: cul_max.pair_mode
@@ -90,7 +77,6 @@ data:
   measurement_offset: 0.0
   window_open_temperature: 12.0
   window_open_duration: 15
-
 ```
 
 ```yaml
@@ -102,13 +88,17 @@ data:
   group_id: 0
 ```
 
-## Wichtige Hinweise
+## Important notes
 
-- MAX! verwendet 6-stellige Hexadressen; die Adressen werden ohne `0x` eingegeben.
-- Funktelegramme werden direkt gesendet. Vor produktivem Einsatz mit einem einzelnen Gerät testen.
-- Mehrere konfigurierte CUL-Gateways werden derzeit noch nicht per Dienst auswählbar unterstützt. Für die erste Version bitte genau einen CUL MAX!-Eintrag verwenden.
-- Ein Wochenprofil-Editor und das Auslesen/Persistieren kompletter Geräte-Konfigurationen sind noch offen. Die vorhandenen Gateway-Funktionen senden aber bereits die FHEM-kompatiblen Pakete.
+- MAX! uses six-character hexadecimal addresses; enter addresses without `0x`.
+- Radio telegrams are transmitted directly. Test with a single device before using the integration in production.
+- When multiple CUL gateways are configured, integration services currently cannot select a specific gateway. For this first version, configure only one CUL MAX! entry.
+- A weekly-profile editor and reading/persisting complete device configurations are still pending. The existing gateway functions already transmit FHEM-compatible packets.
 
-## Entwicklung
+## Development
 
-Die zentrale Protokollimplementierung liegt in `custom_components/cul_max/gateway.py`. Parser-Tests lassen sich mit `python -m unittest discover -s tests -v` ausführen.
+The central protocol implementation is located in `custom_components/cul_max/gateway.py`. Run protocol tests with:
+
+```bash
+python -m unittest discover -s tests -v
+```
