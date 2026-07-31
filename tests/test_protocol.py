@@ -43,6 +43,13 @@ class TestProtocol(unittest.TestCase):
         payload = f"{42:02x}{34:02x}{61:02x}{9:02x}{7:02x}{24:02x}{3:02x}"
         self.assertEqual(payload, "2a223d09071803")
 
+    def test_config_flow_uses_serializable_form_schema(self):
+        flow = Path(__file__).parents[1] / "custom_components" / "cul_max" / "config_flow.py"
+        source = flow.read_text()
+        self.assertIn("STEP_USER_DATA_SCHEMA", source)
+        self.assertIn("ConfigFlowResult", source)
+        self.assertNotIn("from homeassistant.data_entry_flow import FlowResult", source)
+
     def test_cul_initialisation_commands_are_present(self):
         source = GATEWAY.read_text()
         self.assertIn('CUL_MAX_MODE_COMMAND = "X21"', source)
