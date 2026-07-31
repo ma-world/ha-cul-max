@@ -70,6 +70,15 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("identifiers={(DOMAIN, entry.entry_id)}", source)
         self.assertIn("await hass.config_entries.async_forward_entry_setups", source)
 
+    def test_entity_dispatch_handlers_are_home_assistant_callbacks(self):
+        root = Path(__file__).parents[1] / "custom_components" / "cul_max"
+        for platform in ("binary_sensor.py", "climate.py", "sensor.py"):
+            source = (root / platform).read_text()
+            self.assertIn("from homeassistant.core import HomeAssistant, callback", source)
+            self.assertIn("@callback", source)
+            self.assertIn("def _handle_device_updated", source)
+            self.assertNotIn("lambda eid, address: self.async_write_ha_state", source)
+
     def test_serial_input_is_scheduled_on_home_assistant_event_loop(self):
         source = GATEWAY.read_text()
         self.assertIn("self.gateway.hass.loop.call_soon_threadsafe", source)
