@@ -56,6 +56,13 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("ConfigFlowResult", source)
         self.assertNotIn("from homeassistant.data_entry_flow import FlowResult", source)
 
+    def test_existing_fhem_devices_are_typed_from_status_packets(self):
+        source = GATEWAY.read_text()
+        self.assertIn('"ThermostatState": "HeatingThermostat"', source)
+        self.assertIn('"WallThermostatState": "WallMountedThermostat"', source)
+        self.assertIn('"ShutterContactState": "ShutterContact"', source)
+        self.assertIn('device = self._device(source, device_type)', source)
+
     def test_serial_handshake_waits_for_connection_made(self):
         source = GATEWAY.read_text()
         self.assertIn("self.connected = asyncio.Event()", source)

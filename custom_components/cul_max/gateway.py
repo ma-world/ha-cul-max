@@ -353,9 +353,12 @@ class CulMaxGateway:
         except ValueError:
             return True
 
-    def _device(self, address: str) -> MaxDevice:
+    def _device(self, address: str, device_type: str | None = None) -> MaxDevice:
+        """Return a discovered device and optionally set its inferred MAX! type."""
         new = address not in self.devices
         device = self.devices.setdefault(address, MaxDevice(address=address))
+        if device_type and device.device_type == "Unknown":
+            device.device_type = device_type
         device.last_seen = datetime.now().astimezone()
         if new:
             async_dispatcher_send(self.hass, SIGNAL_NEW_DEVICE, self.entry.entry_id, address)
@@ -445,8 +448,19 @@ class CulMaxGateway:
         await self.async_send("ConfigWeekProfile", destination, f"{part:x}{day:x}{profile}")
 
     def _update_device_from_state(self, source: str, command: str, payload: str, group_id: int) -> None:
-        """Decode state payloads using the layouts from FHEM's MAX.pm."""
-        device = self._device(source)
+        """Decode state payloads using the layouts from FHEM's MAX.pm.
+
+        Existing FHEM-paired devices often do not send PairPing again. Infer their
+        type directly from their normal status telegram, just as FHEM MAX.pm does.
+        """
+        device_type = {
+            "ShutterContactState": "ShutterContact",
+            "PushButtonState": "PushButton",
+            "ThermostatState": "HeatingThermostat",
+            "WallThermostatState": "WallMountedThermostat",
+            "WallThermostatControl": "WallMountedThermostat",
+        }.get(command)
+        device = self._device(source, device_type)
         data = device.data
         data.update({"last_command": command, "last_payload": payload, "group_id": group_id})
         try:

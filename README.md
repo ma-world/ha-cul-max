@@ -26,6 +26,30 @@ Zusätzlich zum CUL-Gateway ist die wesentliche Zustands- und Steuerlogik aus FH
 
 Die Funktionen, die FHEM-spezifische Konfigurationsdateien, Readings, Attribute, Timer oder dessen Weboberfläche benötigen, wurden bewusst nicht übernommen. Die Week-Profile sind bereits im Gateway kodierbar, haben aber in dieser Version noch keinen vollwertigen Home-Assistant-Editor bzw. keinen persistenten Profil-Speicher.
 
+## Bereits in FHEM angelernte Geräte übernehmen
+
+Ein erneutes Anlernen ist normalerweise **nicht erforderlich**. MAX!-Geräte sind an
+ihre Gateway-Adresse gebunden, nicht an FHEM selbst.
+
+1. Trage in Home Assistant exakt dieselbe sechsstellige **`maxid`** ein, die beim
+   bisherigen CUL in FHEM hinterlegt war.
+2. Beende FHEM bzw. stelle sicher, dass FHEM den CUL nicht mehr geöffnet hat. Ein
+   serieller CUL-Stick kann immer nur von einem System gleichzeitig verwendet werden.
+3. Starte die CUL-MAX!-Integration. Bestehende Geräte werden automatisch aus ihren
+   normalen Status-Telegrammen erkannt; ein erneutes `PairPing` ist nicht nötig.
+4. Warte auf das nächste Funktelegramm oder löse eines manuell aus:
+   - Fensterkontakt einmal öffnen/schließen bzw. die Taste drücken,
+   - Heizkörperthermostat kurz am Gerät bedienen,
+   - Wandthermostat kurz bedienen.
+
+Nach dem ersten Telegramm erscheint das Gerät unter **Einstellungen → Geräte &
+Dienste → CUL MAX!**. Heiz- und Wandthermostate werden als `climate`, Fensterkontakte
+als `binary_sensor` angelegt.
+
+> Die bisher in FHEM gespeicherten Namen, Wochenprofile und sonstigen Readings werden
+> nicht automatisch migriert. Die Funk-Kopplung und die Geräteadresse bleiben jedoch
+> erhalten, solange dieselbe Gateway-ID verwendet wird.
+
 ## Installation über HACS
 
 1. Dieses Repository in HACS als **Custom repository** vom Typ **Integration** hinzufügen.
