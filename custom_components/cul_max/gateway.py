@@ -59,10 +59,12 @@ class CulProtocol(asyncio.Protocol):
     def __init__(self, gateway: "CulMaxGateway") -> None:
         self.gateway = gateway
         self.transport: asyncio.Transport | None = None
+        self.connected = asyncio.Event()
         self.buffer = ""
 
     def connection_made(self, transport: asyncio.BaseTransport) -> None:
         self.transport = transport  # type: ignore[assignment]
+        self.connected.set()
         self.gateway.on_connected(self)
 
     def data_received(self, data: bytes) -> None:
@@ -115,11 +117,17 @@ class CulMaxGateway:
             return
         self._initialized = False
         loop = asyncio.get_running_loop()
+        # Keep the protocol instance before opening the port. Some serial backends return
+        # before invoking connection_made(), so using the discarded return value creates
+        # a race and incorrectly reports an unavailable transport.
+        protocol = CulProtocol(self)
+        self._protocol = protocol
         transport, _ = await serial_asyncio.create_serial_connection(
-            loop, lambda: CulProtocol(self), self.entry.data[CONF_PORT], baudrate=self.entry.data[CONF_BAUDRATE]
+            loop, lambda: protocol, self.entry.data[CONF_PORT], baudrate=self.entry.data[CONF_BAUDRATE]
         )
         self._transport = transport
         try:
+            await asyncio.wait_for(protocol.connected.wait(), timeout=CUL_COMMAND_TIMEOUT)
             version = await self._async_command("V", "V")
             self._validate_firmware(version)
             await self._async_command(CUL_MAX_MODE_COMMAND, "X")

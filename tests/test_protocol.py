@@ -43,12 +43,24 @@ class TestProtocol(unittest.TestCase):
         payload = f"{42:02x}{34:02x}{61:02x}{9:02x}{7:02x}{24:02x}{3:02x}"
         self.assertEqual(payload, "2a223d09071803")
 
+    def test_manifest_uses_home_assistant_serial_library(self):
+        manifest = Path(__file__).parents[1] / "custom_components" / "cul_max" / "manifest.json"
+        content = manifest.read_text()
+        self.assertIn("pyserial-asyncio-fast", content)
+        self.assertNotIn("pyserial-asyncio==0.6", content)
+
     def test_config_flow_uses_serializable_form_schema(self):
         flow = Path(__file__).parents[1] / "custom_components" / "cul_max" / "config_flow.py"
         source = flow.read_text()
         self.assertIn("STEP_USER_DATA_SCHEMA", source)
         self.assertIn("ConfigFlowResult", source)
         self.assertNotIn("from homeassistant.data_entry_flow import FlowResult", source)
+
+    def test_serial_handshake_waits_for_connection_made(self):
+        source = GATEWAY.read_text()
+        self.assertIn("self.connected = asyncio.Event()", source)
+        self.assertIn("protocol = CulProtocol(self)", source)
+        self.assertIn("await asyncio.wait_for(protocol.connected.wait()", source)
 
     def test_cul_initialisation_commands_are_present(self):
         source = GATEWAY.read_text()
