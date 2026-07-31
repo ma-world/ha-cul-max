@@ -1,0 +1,12 @@
+{
+  "domain": "cul_max",
+  "name": "CUL MAX!",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/CHANGE-ME/ha-cul-max",
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/CHANGE-ME/ha-cul-max/issues",
+  "requirements": ["pyserial-asyncio==0.6"],
+  "version": "0.1.0"
+}

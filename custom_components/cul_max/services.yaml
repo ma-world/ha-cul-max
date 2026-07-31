@@ -1,0 +1,125 @@
+pair_mode:
+  name: Pairing aktivieren
+  description: Aktiviert das Anlernen neuer MAX!-Geräte für die angegebene Dauer.
+  fields:
+    duration:
+      name: Dauer
+      description: Dauer in Sekunden (mindestens 60).
+      default: 60
+      selector:
+        number:
+          min: 60
+          max: 3600
+          unit_of_measurement: s
+broadcast_time:
+  name: Zeit senden
+  description: Sendet die aktuelle Zeit als MAX!-Broadcast.
+fake_window_contact:
+  name: Virtuellen Fensterkontakt senden
+  description: Sendet einen ShutterContactState über die konfigurierte virtuelle Kontaktadresse.
+  fields:
+    device:
+      name: Zieladresse
+      required: true
+      selector:
+        text:
+    is_open:
+      name: Fenster geöffnet
+      required: true
+      selector:
+        boolean:
+    group_id:
+      name: Gruppen-ID
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 255
+fake_wall_thermostat:
+  name: Virtuelles Wandthermostat senden
+  description: Sendet WallThermostatControl über die konfigurierte virtuelle Wandthermostatadresse.
+  fields:
+    device:
+      name: Zieladresse
+      required: true
+      selector:
+        text:
+    desired_temperature:
+      name: Solltemperatur
+      required: true
+      selector:
+        number:
+          min: 4.5
+          max: 30.5
+          step: 0.5
+          unit_of_measurement: °C
+    measured_temperature:
+      name: Gemessene Temperatur
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 51.1
+          step: 0.1
+          unit_of_measurement: °C
+    group_id:
+      name: Gruppen-ID
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 255
+set_group_id:
+  name: Gruppen-ID setzen
+  description: Schreibt die Gruppen-ID in ein MAX!-Gerät; 0 entfernt sie.
+  fields:
+    device:
+      required: true
+      selector:
+        text:
+    group_id:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 255
+configure_temperatures:
+  name: Thermostat-Temperaturwerte konfigurieren
+  description: Schreibt Komfort-, Eco-, Grenz-, Offset- und Fensterwerte in einen MAX!-Thermostat.
+  fields:
+    device:
+      required: true
+      selector:
+        text:
+    comfort_temperature:
+      required: true
+      selector: {number: {min: 4.5, max: 30.5, step: 0.5}}
+    eco_temperature:
+      required: true
+      selector: {number: {min: 4.5, max: 30.5, step: 0.5}}
+    maximum_temperature:
+      required: true
+      selector: {number: {min: 4.5, max: 30.5, step: 0.5}}
+    minimum_temperature:
+      required: true
+      selector: {number: {min: 4.5, max: 30.5, step: 0.5}}
+    measurement_offset:
+      required: true
+      selector: {number: {min: -3.5, max: 3.5, step: 0.5}}
+    window_open_temperature:
+      required: true
+      selector: {number: {min: 4.5, max: 30.5, step: 0.5}}
+    window_open_duration:
+      required: true
+      selector: {number: {min: 0, max: 60, step: 5, unit_of_measurement: min}}
+    group_id:
+      default: 0
+      selector: {number: {min: 0, max: 255}}
+factory_reset:
+  name: Werkseinstellungen wiederherstellen
+  description: Setzt ein MAX!-Gerät zurück. Danach muss es erneut angelernt werden.
+  fields:
+    device:
+      required: true
+      selector:
+        text:
