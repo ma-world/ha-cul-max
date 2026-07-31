@@ -26,6 +26,14 @@ class TestProtocol(unittest.TestCase):
             ("01", "00", "30", "abcdef", "123456", "00", "12"),
         )
 
+    def test_cul_rssi_byte_is_not_part_of_max_frame(self):
+        # Received CUL MAX! frames have an extra RSSI byte when X21 is active.
+        source = GATEWAY.read_text()
+        self.assertIn("expected_length + 2", source)
+        self.assertIn("raw = raw[:-2]", source)
+        # Actual frames reported by the user have a trailing byte, e.g. ...0010C5.
+        self.assertIn('rssi_raw = int(raw[-2:], 16)', source)
+
     def test_wall_thermostat_encoding(self):
         desired = 21.5
         measured = 20.8

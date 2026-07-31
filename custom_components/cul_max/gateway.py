@@ -291,22 +291,38 @@ class CulMaxGateway:
         return f"{now.year - 2000:02x}{now.day:02x}{now.hour:02x}{now.minute | ((now.month & 0x0C) << 4):02x}{now.second | ((now.month & 0x03) << 6):02x}"
 
     @staticmethod
-    def _parse_frame(line: str) -> tuple[int, int, str, str, str, str, int, str] | None:
+    def _parse_frame(line: str) -> tuple[int, int, str, str, str, str, int, str, int | None] | None:
+        """Parse a MAX! Z frame and its optional trailing CUL RSSI byte.
+
+        With `X21` enabled, culfw appends one RSSI byte to received radio frames.
+        That byte is not part of the MAX! length field and must be removed first.
+        """
         if not line.startswith("Z") or len(line) < 21:
             return None
         raw = line[1:]
         try:
             length = int(raw[0:2], 16)
-            if len(raw) != 2 + length * 2:
+            expected_length = 2 + length * 2
+            rssi: int | None = None
+            if len(raw) == expected_length + 2:
+                rssi_raw = int(raw[-2:], 16)
+                rssi = (rssi_raw - 256) / 2 - 74 if rssi_raw >= 128 else rssi_raw / 2 - 74
+                raw = raw[:-2]
+            if len(raw) != expected_length:
                 return None
-            return (length, int(raw[2:4], 16), raw[4:6], raw[6:8].lower(), raw[8:14].lower(), raw[14:20].lower(), int(raw[20:22], 16), raw[22:].lower())
+            return (
+                length,
+                int(raw[2:4], 16),
+                raw[4:6],
+                raw[6:8].lower(),
+                raw[8:14].lower(),
+                raw[14:20].lower(),
+                int(raw[20:22], 16),
+                raw[22:].lower(),
+                rssi,
+            )
         except ValueError:
             return None
-
-    @staticmethod
-    def _rssi_from_line(line: str) -> int | None:
-        # culfw normally appends RSSI elsewhere; retain parser compatibility without assuming a format.
-        return None
 
     def async_handle_line(self, line: str) -> None:
         """Process one line received from CUL firmware."""
@@ -318,7 +334,7 @@ class CulMaxGateway:
         parsed = self._parse_frame(line)
         if not parsed:
             return
-        _, counter, flags, message_id, source, destination, group_id, payload = parsed
+        _, counter, flags, message_id, source, destination, group_id, payload, rssi = parsed
         command = MESSAGE_TYPES.get(message_id, message_id)
         if source in {self.address, self.fake_wt_address, self.fake_sc_address}:
             return
@@ -334,7 +350,7 @@ class CulMaxGateway:
                 self.hass.async_create_task(self.async_send("TimeInformation", source, self._time_payload(), flags="04"))
             return
         if command in {"ShutterContactState", "WallThermostatState", "WallThermostatControl", "ThermostatState", "PushButtonState", "SetTemperature"}:
-            self._update_device_from_state(source, command, payload, group_id)
+            self._update_device_from_state(source, command, payload, group_id, rssi)
 
     def _time_difference_exceeds_tolerance(self, payload: str) -> bool:
         """Return whether a MAX! TimeInformation payload is outside its allowed drift."""
@@ -447,7 +463,7 @@ class CulMaxGateway:
             raise ValueError("Invalid week-profile day, part, or packet length")
         await self.async_send("ConfigWeekProfile", destination, f"{part:x}{day:x}{profile}")
 
-    def _update_device_from_state(self, source: str, command: str, payload: str, group_id: int) -> None:
+    def _update_device_from_state(self, source: str, command: str, payload: str, group_id: int, rssi: int | None = None) -> None:
         """Decode state payloads using the layouts from FHEM's MAX.pm.
 
         Existing FHEM-paired devices often do not send PairPing again. Infer their
@@ -461,6 +477,8 @@ class CulMaxGateway:
             "WallThermostatControl": "WallMountedThermostat",
         }.get(command)
         device = self._device(source, device_type)
+        if rssi is not None:
+            device.rssi = rssi
         data = device.data
         data.update({"last_command": command, "last_payload": payload, "group_id": group_id})
         try:
