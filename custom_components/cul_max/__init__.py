@@ -10,6 +10,7 @@ from homeassistant.const import CONF_DEVICE, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
 
 from .const import (
     DOMAIN,
@@ -43,6 +44,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise ConfigEntryNotReady(f"Cannot open CUL serial interface: {err}") from err
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = gateway
+
+    # Create the parent gateway device before child MAX! devices use it via_device.
+    device_registry = dr.async_get(hass)
+    device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
+        name=f"CUL MAX! ({entry.data['port']})",
+        manufacturer="busware.de",
+        model="CUL868",
+        sw_version=gateway.cul_firmware,
+    )
+
     await hass.config_entries.async_forward_entry_setups(entry, [Platform.BINARY_SENSOR, Platform.CLIMATE, Platform.SENSOR])
 
     async def pair_mode(call: ServiceCall) -> None:

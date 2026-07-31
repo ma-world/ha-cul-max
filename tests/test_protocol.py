@@ -64,6 +64,12 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("ConfigFlowResult", source)
         self.assertNotIn("from homeassistant.data_entry_flow import FlowResult", source)
 
+    def test_gateway_device_is_created_before_child_devices(self):
+        source = (Path(__file__).parents[1] / "custom_components" / "cul_max" / "__init__.py").read_text()
+        self.assertIn("device_registry.async_get_or_create", source)
+        self.assertIn("identifiers={(DOMAIN, entry.entry_id)}", source)
+        self.assertIn("await hass.config_entries.async_forward_entry_setups", source)
+
     def test_serial_input_is_scheduled_on_home_assistant_event_loop(self):
         source = GATEWAY.read_text()
         self.assertIn("self.gateway.hass.loop.call_soon_threadsafe", source)
