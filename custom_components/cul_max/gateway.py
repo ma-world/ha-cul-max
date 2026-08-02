@@ -463,9 +463,53 @@ class CulMaxGateway:
 
     async def async_set_week_profile_part(self, destination: str, day: int, part: int, profile: str) -> None:
         """Send one seven-control-point ConfigWeekProfile packet."""
-        if not 0 <= day <= 6 or part not in {0, 1} or len(profile) != 28:
+        expected_length = 28 if part == 0 else 24
+        if not 0 <= day <= 6 or part not in {0, 1} or len(profile) != expected_length:
             raise ValueError("Invalid week-profile day, part, or packet length")
         await self.async_send("ConfigWeekProfile", destination, f"{part:x}{day:x}{profile}")
+
+    async def async_set_week_profile_day(
+        self, destination: str, day: int, schedule: list[dict[str, Any]]
+    ) -> None:
+        """Encode and write one complete MAX! weekday profile.
+
+        ``schedule`` contains up to 13 intervals. Each interval starts at ``time``
+        and remains active until the next interval; the final interval runs to 24:00.
+        """
+        if not 0 <= day <= 6:
+            raise ValueError("Day must be between 0 (Saturday) and 6 (Friday)")
+        if not 1 <= len(schedule) <= 13:
+            raise ValueError("A weekday needs between 1 and 13 schedule entries")
+
+        control_points: list[str] = []
+        previous_minutes = -1
+        for index, interval in enumerate(schedule):
+            try:
+                temperature = float(interval["temperature"])
+                time_text = str(interval["time"])
+                hour_text, minute_text = time_text.split(":", maxsplit=1)
+                hour, minute = int(hour_text), int(minute_text)
+            except (KeyError, TypeError, ValueError) as err:
+                raise ValueError("Each schedule entry needs time HH:MM and temperature") from err
+            if not 4.5 <= temperature <= 30.5 or (temperature * 2) % 1:
+                raise ValueError("Temperatures must be 4.5–30.5 °C in 0.5 °C steps")
+            if not 0 <= hour <= 23 or not 0 <= minute <= 59 or minute % 5:
+                raise ValueError("Times must use 00:00–23:55 in five-minute steps")
+            minutes = hour * 60 + minute
+            if index == 0 and minutes != 0:
+                raise ValueError("The first schedule entry must start at 00:00")
+            if minutes <= previous_minutes:
+                raise ValueError("Schedule times must be strictly increasing")
+            previous_minutes = minutes
+            value = (int(temperature * 2) << 9) | (minutes // 5)
+            control_points.append(f"{value:04x}")
+
+        # FHEM MAX.pm pads unused points with 0x4520 (17 °C at 00:00), which
+        # terminates the active schedule at the final supplied control point.
+        profile = "".join(control_points)
+        profile += "4520" * ((52 - len(profile)) // 4)
+        await self.async_set_week_profile_part(destination, day, 0, profile[:28])
+        await self.async_set_week_profile_part(destination, day, 1, profile[28:])
 
     def _update_device_from_state(self, source: str, command: str, payload: str, group_id: int, rssi: int | None = None) -> None:
         """Decode state payloads using the layouts from FHEM's MAX.pm.

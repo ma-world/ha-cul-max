@@ -123,3 +123,35 @@ factory_reset:
       required: true
       selector:
         text:
+
+set_week_profile_day:
+  name: Set weekly-profile day
+  description: Replaces one complete weekday schedule on a MAX! thermostat. Day 0 is Saturday and day 6 is Friday. The first entry must begin at 00:00; times must use five-minute increments. Existing profiles cannot yet be read through this integration.
+  fields:
+    device:
+      name: Device address
+      required: true
+      selector:
+        text:
+    day:
+      name: MAX! weekday
+      description: 0 = Saturday, 1 = Sunday, 2 = Monday, 3 = Tuesday, 4 = Wednesday, 5 = Thursday, 6 = Friday.
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 6
+          mode: box
+    schedule:
+      name: Schedule
+      description: List of intervals. Each entry needs time (HH:MM) and temperature (°C). The last temperature remains active until midnight.
+      required: true
+      example:
+        - time: "00:00"
+          temperature: 17
+        - time: "06:30"
+          temperature: 21
+        - time: "22:30"
+          temperature: 17
+      selector:
+        object:

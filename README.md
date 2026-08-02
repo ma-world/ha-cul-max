@@ -62,6 +62,51 @@ entities. Their thermostat card supports:
 Switching back to **Heat** restores the previously reported target temperature. If
 no target temperature has been received yet, the integration uses 20.0 °C.
 
+## Editing weekly schedules
+
+A graphical weekly-schedule editor is not available yet. You can write a complete
+schedule for one day with the `cul_max.set_week_profile_day` action from **Developer
+tools → Actions**, or use the same action in an automation/script. The action does
+not currently display or import an existing schedule; it replaces the selected day
+with the schedule supplied in the action data.
+
+MAX! weekday numbers are **0 = Saturday** through **6 = Friday**. The first interval
+must begin at `00:00`; every time must be a five-minute increment. A supplied
+temperature stays active until the next interval, and the final one stays active
+until midnight. One day accepts at most 13 intervals.
+
+| Day | MAX! value |
+| --- | --- |
+| Saturday | `0` |
+| Sunday | `1` |
+| Monday | `2` |
+| Tuesday | `3` |
+| Wednesday | `4` |
+| Thursday | `5` |
+| Friday | `6` |
+
+```yaml
+service: cul_max.set_week_profile_day
+data:
+  device: "1b6ea1"
+  day: 2 # Monday
+  schedule:
+    - time: "00:00"
+      temperature: 17.0
+    - time: "06:30"
+      temperature: 21.0
+    - time: "08:30"
+      temperature: 17.0
+    - time: "17:00"
+      temperature: 21.0
+    - time: "22:30"
+      temperature: 17.0
+```
+
+Writing a weekday sends two MAX! `ConfigWeekProfile` radio packets. It is best to
+change one day first and verify the thermostat has received both packets before
+writing the rest of the week.
+
 ## Services
 
 ```yaml

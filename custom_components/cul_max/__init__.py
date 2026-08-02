@@ -91,6 +91,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def factory_reset(call: ServiceCall) -> None:
         await gateway.async_factory_reset(call.data[CONF_DEVICE])
 
+    async def set_week_profile_day(call: ServiceCall) -> None:
+        await gateway.async_set_week_profile_day(
+            call.data[CONF_DEVICE], call.data["day"], call.data["schedule"]
+        )
+
     # Services are integration-wide. The entry id avoids ambiguity with multiple CULs.
     if not hass.services.has_service(DOMAIN, SERVICE_PAIR_MODE):
         hass.services.async_register(
@@ -128,6 +133,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             }),
         )
         hass.services.async_register(DOMAIN, "factory_reset", factory_reset, schema=SERVICE_SCHEMA_DEVICE)
+        hass.services.async_register(
+            DOMAIN,
+            "set_week_profile_day",
+            set_week_profile_day,
+            schema=SERVICE_SCHEMA_DEVICE.extend({
+                vol.Required("day"): vol.All(vol.Coerce(int), vol.Range(min=0, max=6)),
+                vol.Required("schedule"): [
+                    {
+                        vol.Required("time"): str,
+                        vol.Required("temperature"): vol.Coerce(float),
+                    }
+                ],
+            }),
+        )
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True

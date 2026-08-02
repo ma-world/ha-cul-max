@@ -41,6 +41,18 @@ class TestProtocol(unittest.TestCase):
         first = ((encoded_measured & 0x100) >> 1) | (int(desired * 2) & 0x7F)
         self.assertEqual(f"{first:02x}{encoded_measured & 0xFF:02x}", "2bd0")
 
+    def test_week_profile_day_uses_fhem_compatible_encoding(self):
+        source = GATEWAY.read_text()
+        self.assertIn("int(temperature * 2) << 9", source)
+        self.assertIn('profile += "4520"', source)
+        self.assertIn("async_set_week_profile_part(destination, day, 0", source)
+        self.assertIn("async_set_week_profile_part(destination, day, 1", source)
+
+    def test_week_profile_service_is_registered(self):
+        source = (Path(__file__).parents[1] / "custom_components" / "cul_max" / "__init__.py").read_text()
+        self.assertIn('"set_week_profile_day"', source)
+        self.assertIn('vol.Required("schedule")', source)
+
     def test_fhem_set_temperature_encoding(self):
         # MAX.pm: low six bits are target temperature * 2; high bits select control mode.
         target, mode = 21.5, 1  # manual
