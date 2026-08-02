@@ -1,7 +1,7 @@
 """Climate entities for MAX! heating and wall thermostats."""
 from __future__ import annotations
 
-from homeassistant.components.climate import ClimateEntity, HVACMode
+from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature, HVACMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
@@ -42,6 +42,8 @@ class CulMaxClimate(CulMaxEntity, ClimateEntity):
     _attr_min_temp = 4.5
     _attr_max_temp = 30.5
     _attr_hvac_modes = [HVACMode.HEAT, HVACMode.OFF]
+    # Home Assistant requires this feature flag before showing the target-temperature control.
+    _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
 
     @property
     def current_temperature(self) -> float | None:

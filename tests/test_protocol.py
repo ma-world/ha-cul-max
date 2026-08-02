@@ -64,6 +64,12 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("ConfigFlowResult", source)
         self.assertNotIn("from homeassistant.data_entry_flow import FlowResult", source)
 
+    def test_climate_advertises_target_temperature_control(self):
+        source = (Path(__file__).parents[1] / "custom_components" / "cul_max" / "climate.py").read_text()
+        self.assertIn("ClimateEntityFeature", source)
+        self.assertIn("ClimateEntityFeature.TARGET_TEMPERATURE", source)
+        self.assertIn("async_set_temperature", source)
+
     def test_gateway_device_is_created_before_child_devices(self):
         source = (Path(__file__).parents[1] / "custom_components" / "cul_max" / "__init__.py").read_text()
         self.assertIn("device_registry.async_get_or_create", source)

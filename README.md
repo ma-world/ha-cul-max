@@ -11,7 +11,7 @@ This integration ports the **gateway component** of FHEM's `14_CUL_MAX.pm` to Ho
 - Reception of window-contact, wall-thermostat, and radiator-thermostat telegrams
 - Dynamically created entities:
   - Window contacts as `binary_sensor`
-  - Radiator and wall thermostats as `climate` entities with target temperature and on/off support (`4.5 °C` represents “off” in the MAX! protocol)
+  - Radiator and wall thermostats as `climate` entities with a target-temperature control and `Heat` / `Off` modes (`4.5 °C` represents “off” in the MAX! protocol)
   - Measured temperature, target temperature, and valve position also as `sensor` entities
 - ACK/NACK evaluation and retransmission of outgoing telegrams (3 attempts, 3 seconds apart)
 - Services for time synchronization, a simulated window contact, and a simulated wall thermostat
@@ -49,6 +49,18 @@ After the first telegram, the device appears under **Settings → Devices & serv
 > On Home Assistant OS, `/dev/serial/by-id/...` is usually more stable than `/dev/ttyACM0`.
 > Use this stable device path for reliable reconnection after unplugging and reconnecting the CUL stick.
 > Initialization requires CUL firmware 1.52 or later; a-culfw is also supported.
+
+## Thermostat control in the Home Assistant UI
+
+Radiator and wall thermostats are available as standard Home Assistant `climate`
+entities. Their thermostat card supports:
+
+- setting the target temperature from **4.5 °C to 30.5 °C** in **0.5 °C** steps;
+- **Heat** mode, which sends the selected target temperature; and
+- **Off** mode, which sends the MAX! off/frost-protection value of **4.5 °C**.
+
+Switching back to **Heat** restores the previously reported target temperature. If
+no target temperature has been received yet, the integration uses 20.0 °C.
 
 ## Services
 
